@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+
 from tkinter import *
 from tkinter import filedialog 
 from tkinter import ttk 
