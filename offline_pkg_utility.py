@@ -13,17 +13,19 @@ class UseType(Enum):
 
 class OfflinePkgUtility:
     repo_ids = []
-    def __init__(self, use_type, path=None, name=None): 
+    def __init__(self, use_type): 
+        if platform.linux_distribution()[0] != "CentOS Linux":
+            raise Exception("This tool only works for CentOS/RHEL/Fedora 7/8")
         if use_type.value == 1:
             self.download_repos(name=name, path=path)
     
-    def get_repo_ids(self):
+    def _get_repo_ids(self):
         result = subprocess.check_output(["yum", "repolist"])
         result = result.decode().splitlines()
         for i in range(1, len(result)):
             self.repo_ids.append((result[i].split()[0]))
     
-    def check_yum_utils_installed(self):
+    def _check_yum_utils_installed(self):
         command = "reposync --version".split()
         try:
             p = subprocess.Popen(command, stdin=PIPE, stderr=PIPE,
@@ -45,8 +47,8 @@ class OfflinePkgUtility:
         final_path = f"{path}/{name}/repos"
         if not os.path.exists(final_path):
             os.makedirs(final_path)
-        self.check_yum_utils_installed()
-        self.download_required_server_pkgs(path=path, name=name)
+        self._check_yum_utils_installed()
+        self._download_required_server_pkgs(path=path, name=name)
         self.get_repo_ids()
         for id in self.repo_ids:
             command = f"sudo reposync -m --repoid={id} --newest-only --download-metadata --download-path={final_path}".split()
@@ -54,7 +56,7 @@ class OfflinePkgUtility:
             universal_newlines=True)
             sudo_prompt = p.communicate(os.getenv("SUDO_PASSWORD") + '\n')[1]
             p.terminate()
-    def download_required_server_pkgs(self, path, name):
+    def _download_required_server_pkgs(self, path, name):
         packages = ["httpd", "yum-utils"]
         for package in packages:
             command = f"yum install -y --installroot={os.path.dirname(os.path.realpath(__file__))}/tmp --downloadonly --releasever=/ --downloaddir={path}/{name}/{package} {package}".split()
@@ -67,8 +69,6 @@ class OfflinePkgUtility:
 
 
 if __name__ == "__main__":
-    if platform.linux_distribution()[0] != "CentOS Linux":
-        raise Exception("This tool only works for CentOS/RHEL/Fedora 7/8")
     parser = argparse.ArgumentParser(description='Process some integers.')
 
     parser.add_argument('--path', help='Path to where to save the data')
