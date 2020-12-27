@@ -28,7 +28,21 @@ def main():
 
     window.title('offline-pkg-manager') 
 
-    window.geometry("500x500") 
+    window.geometry("700x700") 
+    
+    def button_pressed_toggle_views(status, button, progress, label, label_content):
+        if status == "error":
+            progress.stop()
+            progress.grid_remove()
+            label["text"] = label_content
+            label.grid(column=1, row=5, pady=15, sticky="ew", columnspan=3)
+            button["state"] = "active"
+        else:
+            button["state"] = "disabled"
+            label["text"] = label_content
+            label.grid_remove()
+            progress.start(interval=10)
+            progress.grid(column=1, row=5, pady=15, sticky="ew", columnspan=3)
     
 
     def select_path(): 
@@ -39,27 +53,19 @@ def main():
         path_input.insert(0, filename)
 
     def start_download():
-        start_download_button["state"] = "disabled"
-        download_error_label["text"] = ""
-        download_error_label.grid_remove()
-        download_progress.start(interval=10)
-        download_progress.grid(column=1, row=4, pady=15, sticky="ew", columnspan=3)
         try:
+            button_pressed_toggle_views(status="none", button=start_download_button, progress=download_progress, label=download_error_label, label_content="")
             opu = OfflinePkgUtility(UseType.DOWNLOAD)
             opu.download_repos(name_input.get(), path_input.get())
         except Exception as e:
-            download_progress.stop()
-            download_progress.grid_remove()
-            download_error_label["text"] = e
-            download_error_label.grid(column=1, row=4, pady=15, sticky="ew", columnspan=3)
-            start_download_button["state"] = "active"
+            button_pressed_toggle_views(status="error", button=start_download_button, progress=download_progress, label=download_error_label, label_content=e)
 
     def start_setup():
         setup_server_button["state"] = "disabled"
         download_error_label["text"] = ""
         download_error_label.grid_remove()
         setup_server_progress.start(interval=10)
-        setup_server_progress.grid(column=1, row=4, pady=15, sticky="ew", columnspan=3)
+        setup_server_progress.grid(column=1, row=5, pady=15, sticky="ew", columnspan=3)
 
 
 
@@ -67,6 +73,9 @@ def main():
     
     download_error_label = Label(download_repo_tab, text="")
     download_error_label.configure(foreground="red")
+
+    download_console_output = Text(download_repo_tab)
+    download_console_output["state"] = "disabled"
 
     start_download_button = Button(download_repo_tab, text="Download Packages", command=start_download)
 
@@ -96,6 +105,7 @@ def main():
     name_label.grid(column = 1, row = 2, pady=20,  sticky="ew")
     name_input.grid(column=2, row=2, ipadx = 25, ipady = 5,  sticky="ew", columnspan=2)
     start_download_button.grid(column=1, row=3, pady=15, sticky="ew", columnspan=3)
+    download_console_output.grid(column=1, rowspan=1, row=4, sticky="ew", columnspan=3)
     download_repo_tab.grid_columnconfigure((0, 4), weight=1) 
 
 
