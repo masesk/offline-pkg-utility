@@ -86,6 +86,6 @@ if __name__ == "__main__":
         parser.error("--download requires --name and --path.")
     offline_package_util = OfflinePkgUtility()
     if args.download:
-        offline_package_util.download_repos()
+        offline_package_util.download_repos(name=args.name, path=args.path)
 
     
