@@ -4,7 +4,11 @@ from tkinter import filedialog
 from tkinter import ttk, messagebox
 import threading
 from pathlib import Path
-from offline_pkg_utility import OfflinePkgUtility, UseType
+from offline_pkg_utility import OfflinePkgUtility
+import threading 
+
+
+
 
 
 
@@ -29,6 +33,8 @@ def main():
     window.title('offline-pkg-manager') 
 
     window.geometry("700x700") 
+
+
     
     def button_pressed_toggle_views(status, button, progress, label, label_content):
         if status == "error":
@@ -51,12 +57,23 @@ def main():
                                             ) 
         path_input.delete(0, END)
         path_input.insert(0, filename)
+    
 
+    def add_download_console(message):
+        download_console_output["state"] = "normal"
+        download_console_output.insert(END, message + '\n')
+        download_console_output["state"] = "disabled"
+
+    def start_download_thread(download_console_output):
+        opu = OfflinePkgUtility(add_download_console)
+        opu.download_repos(name_input.get(), path_input.get())
+        button_pressed_toggle_views(status="error", button=start_download_button, progress=download_progress, label=download_error_label, label_content="")
+        
     def start_download():
         try:
             button_pressed_toggle_views(status="none", button=start_download_button, progress=download_progress, label=download_error_label, label_content="")
-            opu = OfflinePkgUtility(UseType.DOWNLOAD)
-            opu.download_repos(name_input.get(), path_input.get())
+            t1 = threading.Thread(target=start_download_thread, args=(download_console_output,)) 
+            t1.start()
         except Exception as e:
             button_pressed_toggle_views(status="error", button=start_download_button, progress=download_progress, label=download_error_label, label_content=e)
 
@@ -67,6 +84,7 @@ def main():
         setup_server_progress.start(interval=10)
         setup_server_progress.grid(column=1, row=5, pady=15, sticky="ew", columnspan=3)
 
+        
 
 
     ### Download 
@@ -104,10 +122,9 @@ def main():
     path_button.grid(column=3, row=1,  sticky="ew")
     name_label.grid(column = 1, row = 2, pady=20,  sticky="ew")
     name_input.grid(column=2, row=2, ipadx = 25, ipady = 5,  sticky="ew", columnspan=2)
-    start_download_button.grid(column=1, row=3, pady=15, sticky="ew", columnspan=3)
+    start_download_button.grid(column=2, row=3, pady=15, sticky="ew", columnspan=1)
     download_console_output.grid(column=1, rowspan=1, row=4, sticky="ew", columnspan=3)
     download_repo_tab.grid_columnconfigure((0, 4), weight=1) 
-
 
 
     ### Server Tab

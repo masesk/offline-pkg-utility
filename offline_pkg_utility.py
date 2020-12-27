@@ -3,27 +3,31 @@ import platform
 import subprocess
 from subprocess import PIPE
 import os
-from enum import Enum
-import shutil
 
 
-class UseType(Enum):
-    DOWNLOAD = 1
-    SETUP = 2
 
 class OfflinePkgUtility:
-    repo_ids = []
-    def __init__(self, use_type): 
+    _repo_ids = []
+    _callback = None
+    def __init__(self, callback): 
         if platform.linux_distribution()[0] != "CentOS Linux":
             raise Exception("This tool only works for CentOS/RHEL/Fedora 7/8")
-        if use_type.value == 1:
-            self.download_repos(name=name, path=path)
+        
+        if callback is not None:
+            self._callback = callback
     
-    def _get_repo_ids(self):
+    def _send_message(self, message):
+        if self._callback is not None:
+            self._callback(message)
+
+
+    def _get_repo_ids(self, callback=None):
+        self._send_message("Retrieving repo names...")
         result = subprocess.check_output(["yum", "repolist"])
         result = result.decode().splitlines()
         for i in range(1, len(result)):
-            self.repo_ids.append((result[i].split()[0]))
+            self._repo_ids.append((result[i].split()[0]))
+        self._send_message("Found: " + ', '.join(map(str, self._repo_ids)))
     
     def _check_yum_utils_installed(self):
         command = "reposync --version".split()
@@ -36,33 +40,32 @@ class OfflinePkgUtility:
         except FileNotFoundError as e:
             raise Exception("yum-utils is not installed.")
 
-
-    def sudo_test(self):
-        command = "yum install httpd".split()
-        p = subprocess.Popen(['sudo', '-S'] + command, stdin=PIPE, stderr=PIPE,
-            universal_newlines=True)
-        sudo_prompt = p.communicate(os.getenv("SUDO_PASSWORD") + '\n')[1]
-        p.terminate()
     def download_repos(self, name, path):
+        self._repo_ids = []
         final_path = f"{path}/{name}/repos"
         if not os.path.exists(final_path):
             os.makedirs(final_path)
         self._check_yum_utils_installed()
         self._download_required_server_pkgs(path=path, name=name)
-        self.get_repo_ids()
-        for id in self.repo_ids:
+        self._get_repo_ids()
+        for id in self._repo_ids:
+            self._send_message(f"Downloading packages from {id}...this may take a while...")
             command = f"sudo reposync -m --repoid={id} --newest-only --download-metadata --download-path={final_path}".split()
             p = subprocess.Popen(['sudo', '-S'] + command, stdin=PIPE, stderr=PIPE,
             universal_newlines=True)
             sudo_prompt = p.communicate(os.getenv("SUDO_PASSWORD") + '\n')[1]
             p.terminate()
+            self._send_message(f"Packages from {id} downloaded successfully.")
     def _download_required_server_pkgs(self, path, name):
-        packages = ["httpd", "yum-utils"]
+        packages = ["httpd", "yum-utils", "python3-tkinter"]
         for package in packages:
+            self._send_message(f"Downloading {package}...")
             command = f"yum install -y --installroot={os.path.dirname(os.path.realpath(__file__))}/tmp --downloadonly --releasever=/ --downloaddir={path}/{name}/{package} {package}".split()
             p = subprocess.Popen(['sudo', '-S'] + command, stdin=PIPE, stderr=PIPE,
             universal_newlines=True)
             sudo_prompt = p.communicate(os.getenv("SUDO_PASSWORD") + '\n')[1]
+            self._send_message(f"{package} download complete.")
+            
             p.terminate()
 
 
@@ -81,8 +84,8 @@ if __name__ == "__main__":
 
     if args.download and (args.name is None or args.path is None):
         parser.error("--download requires --name and --path.")
+    offline_package_util = OfflinePkgUtility()
     if args.download:
-        use_type = UseType.DOWNLOAD
+        offline_package_util.download_repos()
 
-    offline_package_util = OfflinePkgUtility(use_type, path=args.path, name=args.name)
     
