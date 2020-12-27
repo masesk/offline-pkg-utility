@@ -51,12 +51,19 @@ def main():
             progress.grid(column=1, row=5, pady=15, sticky="ew", columnspan=3)
     
 
-    def select_path(): 
+    def select_download_path(): 
         filename = filedialog.askdirectory(initialdir = Path(__file__).resolve().parent, 
                                             title = "Select output directory", 
                                             ) 
         path_input.delete(0, END)
         path_input.insert(0, filename)
+
+    def select_server_path():
+        filename = filedialog.askdirectory(initialdir = Path(__file__).resolve().parent, 
+                                            title = "Select saved repo directory", 
+                                            ) 
+        saved_path_input.delete(0, END)
+        saved_path_input.insert(0, filename)
     
 
     def add_download_console(message):
@@ -65,10 +72,12 @@ def main():
         download_console_output["state"] = "disabled"
 
     def start_download_thread(download_console_output):
-        opu = OfflinePkgUtility(add_download_console)
-        opu.download_repos(name_input.get(), path_input.get())
-        button_pressed_toggle_views(status="error", button=start_download_button, progress=download_progress, label=download_error_label, label_content="")
-        
+        try:
+            opu = OfflinePkgUtility(add_download_console)
+            opu.download_repos(name_input.get(), path_input.get())
+            button_pressed_toggle_views(status="error", button=start_download_button, progress=download_progress, label=download_error_label, label_content="")
+        except Exception as e:
+            button_pressed_toggle_views(status="error", button=start_download_button, progress=download_progress, label=download_error_label, label_content=e)
     def start_download():
         try:
             button_pressed_toggle_views(status="none", button=start_download_button, progress=download_progress, label=download_error_label, label_content="")
@@ -98,7 +107,7 @@ def main():
     start_download_button = Button(download_repo_tab, text="Download Packages", command=start_download)
 
 
-    path_button = Button(download_repo_tab, text="...", command = select_path)
+    path_button = Button(download_repo_tab, text="...", command = select_download_path)
 
 
     name_input = ttk.Entry(download_repo_tab, justify = CENTER, 
@@ -132,7 +141,7 @@ def main():
     setup_server_button = Button(setup_server_tab, text="Setup/Update Server", command=start_setup)
 
 
-    saved_path_button = Button(setup_server_tab, text="...", command = select_path)
+    saved_path_button = Button(setup_server_tab, text="...", command = select_server_path)
 
 
     saved_name_input = ttk.Entry(setup_server_tab, justify = CENTER, 
