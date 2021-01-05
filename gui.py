@@ -30,7 +30,7 @@ def main():
     style.configure('Label', foreground = 'green')
 
 
-    window.title('offline-pkg-manager') 
+    window.title('offline-pkg-utility') 
 
     window.geometry("700x700") 
 
@@ -41,14 +41,14 @@ def main():
             progress.stop()
             progress.grid_remove()
             label["text"] = label_content
-            label.grid(column=1, row=5, pady=15, sticky="ew", columnspan=3)
+            label.grid(column=1, row=6, pady=15, sticky="ew", columnspan=3)
             button["state"] = "active"
         else:
             button["state"] = "disabled"
             label["text"] = label_content
             label.grid_remove()
             progress.start(interval=10)
-            progress.grid(column=1, row=5, pady=15, sticky="ew", columnspan=3)
+            progress.grid(column=1, row=6, pady=15, sticky="ew", columnspan=3)
     
 
     def select_download_path(): 
@@ -73,7 +73,7 @@ def main():
 
     def start_download_thread(download_console_output):
         try:
-            opu = OfflinePkgUtility(add_download_console)
+            opu = OfflinePkgUtility(sudo_password=root_password_input.get(),callback=add_download_console)
             opu.download_repos(name_input.get(), path_input.get())
             button_pressed_toggle_views(status="error", button=start_download_button, progress=download_progress, label=download_error_label, label_content="")
         except Exception as e:
@@ -91,7 +91,7 @@ def main():
         download_error_label["text"] = ""
         download_error_label.grid_remove()
         setup_server_progress.start(interval=10)
-        setup_server_progress.grid(column=1, row=5, pady=15, sticky="ew", columnspan=3)
+        setup_server_progress.grid(column=1, row=6, pady=15, sticky="ew", columnspan=3)
 
         
 
@@ -117,10 +117,15 @@ def main():
     path_input = ttk.Entry(download_repo_tab, justify = CENTER, 
                                         font = ('arial', 10, 'bold'))    
 
+    root_password_input = ttk.Entry(download_repo_tab, justify= CENTER,
+                                        font = ('arial', 10, 'bold'), show="*")
+
 
     path_label = Label(download_repo_tab, text="Output Path: ")
 
     name_label = Label(download_repo_tab, text="Name: ")
+
+    root_password_label = Label(download_repo_tab, text="Root Password: ")
 
     download_progress = ttk.Progressbar(download_repo_tab, orient = HORIZONTAL, 
                 length = 100, mode = 'indeterminate') 
@@ -131,8 +136,10 @@ def main():
     path_button.grid(column=3, row=1,  sticky="ew")
     name_label.grid(column = 1, row = 2, pady=20,  sticky="ew")
     name_input.grid(column=2, row=2, ipadx = 25, ipady = 5,  sticky="ew", columnspan=2)
-    start_download_button.grid(column=2, row=3, pady=15, sticky="ew", columnspan=1)
-    download_console_output.grid(column=1, rowspan=1, row=4, sticky="ew", columnspan=3)
+    root_password_label.grid(column = 1, row = 3,  sticky="ew")
+    root_password_input.grid(column=2, row=3, ipadx = 25, ipady = 5,  sticky="ew", columnspan=2)
+    start_download_button.grid(column=2, row=4, pady=15, sticky="ew", columnspan=1)
+    download_console_output.grid(column=1, rowspan=1, row=5, sticky="ew", columnspan=3)
     download_repo_tab.grid_columnconfigure((0, 4), weight=1) 
 
 
@@ -162,8 +169,10 @@ def main():
 
     saved_pm_dropdown = OptionMenu(setup_server_tab, saved_pm_dd_sel, "YUM")
 
+    root_password_server_input = ttk.Entry(setup_server_tab, justify= CENTER,
+                                        font = ('arial', 10, 'bold'), show="*")
 
-
+    root_password_server_label = Label(setup_server_tab, text="Root Password: ")
     setup_server_progress = ttk.Progressbar(setup_server_tab, orient = HORIZONTAL, 
                 length = 100, mode = 'indeterminate') 
     setup_server_progress["value"] = 0
@@ -173,7 +182,9 @@ def main():
     saved_path_button.grid(column=3, row=1,  sticky="ew")
     saved_pm_label.grid(column=1, row=2, sticky="ew")
     saved_pm_dropdown.grid(column=2, pady=15 ,row=2, sticky="ew", columnspan=2)
-    setup_server_button.grid(column=1, row=3, pady=15, sticky="ew", columnspan=3)
+    root_password_server_label.grid(column = 1, row = 3,  sticky="ew")
+    root_password_server_input.grid(column=2, row=3, ipadx = 25, ipady = 5,  sticky="ew", columnspan=2)
+    setup_server_button.grid(column=1, row=4, pady=15, sticky="ew", columnspan=3)
     setup_server_tab.grid_columnconfigure((0, 4), weight=1) 
 
 
