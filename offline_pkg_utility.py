@@ -79,11 +79,12 @@ class OfflinePkgUtility:
         self._check_yum_utils_installed()
         command = f"createrepo /var/www/html".split()
         self._execute_root_command(command)
-        self._send_message(f"Setting up {package}...")
-        command = f"mkdir -p /var/www/html/repos/".split()
-        self._execute_root_command(command)
-        command = f"cp -r {path}/repos/* /var/www/html/repos/".split()
-        self._execute_root_command(command)
+        for package in os.listdir(f"{path}/repos/"):
+            self._send_message(f"Setting up {package}...")
+            command = f"mkdir -p /var/www/html/repos/{package}".split()
+            self._execute_root_command(command)
+            command = f"cp -r {path}/repos/{package}/* /var/www/html/repos/{package}/".split()
+            self._execute_root_command(command)
         command = f"systemctl restart httpd".split()
         self._execute_root_command(command)
     def setup_client(self, ip):
