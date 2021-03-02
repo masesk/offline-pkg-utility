@@ -129,8 +129,7 @@ def main():
     def start_setup_thread():
         try:
             opu = OfflinePkgUtility(sudo_password=root_password_server_input.get())
-            opu.setup_pm_server(saved_path_input)
-            time.sleep(5.5)
+            opu.setup_pm_server(saved_path_input.get())
             button_pressed_toggle_views(status="done", button=setup_server_button, progress=setup_server_progress, label=setup_server_error_label, label_content="")
         except Exception as e:
             button_pressed_toggle_views(status="error", button=setup_server_button, progress=setup_server_progress, label=setup_server_error_label, label_content=e)
@@ -158,7 +157,7 @@ def main():
     def start_client_thread():
         try:
             opu = OfflinePkgUtility(sudo_password=root_password_server_input.get())
-            opu.setup_client(saved_path_input)
+            opu.setup_client(saved_path_input.get())
             time.sleep(5.5)
             button_pressed_toggle_views(status="done", button=setup_client_button, progress=setup_client_progress, label=setup_client_error_label, label_content="")
         except Exception as e:

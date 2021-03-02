@@ -68,7 +68,7 @@ class OfflinePkgUtility:
             self._execute_root_command(command)
             self._send_message(f"Packages from {id} downloaded successfully.")
     def _download_required_server_pkgs(self, path, name):
-        packages = ["httpd", "yum-utils", "python3-tkinter"]
+        packages = ["httpd", "yum-utils", "python3-tkinter, createrepo"]
         for package in packages:
             self._send_message(f"Downloading {package}...")
             command = f"yum install -y --installroot={os.path.dirname(os.path.realpath(__file__))}/tmp --downloadonly --releasever=/ --downloaddir={path}/{name}/{package} {package}".split()
@@ -76,18 +76,18 @@ class OfflinePkgUtility:
             self._send_message(f"{package} download complete.")
 
     def setup_pm_server(self, path):
-        _check_yum_utils_installed()
+        self._check_yum_utils_installed()
+        command = f"createrepo /var/www/html".split()
+        self._execute_root_command(command)
         for package in os.listdir(f"{path}/repos/"):
-            if os.path.isdir(package):
+            if os.path.isdir(f"{path}/repos/{package}"):
                 self._send_message(f"Setting up {package}...")
-                command = f"mkdir –p /var/www/html/repos/{package}".split()
+                command = f"mkdir -p /var/www/html/repos/{package}".split()
                 self._execute_root_command(command)
-                command = f"cp -r {path} /var/www/html/repos/{package}".split()
+                command = f"cp -r {path}/repos/{package} /var/www/html/repos/{package}".split()
                 self._execute_root_command(command)
-                command = f"createrepo /var/www/html".split()
-                self._execute_root_command(command)
-                command = f"systemctl restart httpd".split()
-                self._execute_root_command(command)
+        command = f"systemctl restart httpd".split()
+        self._execute_root_command(command)
     def setup_client(self, ip):
         command = "tee".split()
         self._execute_root_command(command)
