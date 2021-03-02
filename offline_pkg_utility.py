@@ -7,13 +7,18 @@ import getpass
 
 
 
+
 class OfflinePkgUtility:
     _repo_ids = []
     _callback = None
     _sudo_password = ""
+    _supported = ["centos", "fedora", "red hat"]
     def __init__(self, sudo_password=None, callback=None): 
-        if platform.linux_distribution()[0] != "CentOS Linux":
-            raise Exception("This tool only works for CentOS/RHEL/Fedora 7/8")
+        dist = (platform.linux_distribution()[0]).lower()
+        for s in self._supported:
+            if s in dist:
+                return
+        raise Exception("This tool only works for CentOS/RHEL/Fedora 7/8")
         
         if callback is not None:
             self._callback = callback
@@ -83,27 +88,35 @@ class OfflinePkgUtility:
                 self._execute_root_command(command)
                 command = f"systemctl restart httpd".split()
                 self._execute_root_command(command)
+    def setup_client(self, ip):
+        command = "tee".split()
+        self._execute_root_command(command)
+        p = subprocess.Popen(['sudo', 'tee', '-a', '/tmp/test.txt'], stdin=PIPE, stderr=PIPE,
+            universal_newlines=True)
+        p.stdin.write(f'[remote] \n name=LocalNetwork \n baseurl=http://{ip} \n gpgcheck=0 \n enabled=1 \n')
+        p.stdin.close()
+        p.wait()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('--path', help='Path to where to save the data')
     parser.add_argument('--name', help='Name of configuration')
+    parser.add_argument('--ip', help='YUM offline server IP used by client')
     parser.add_argument('--setup-server', help='server', action='store_true')
     parser.add_argument('--download', help='Use the tool to download repos', action='store_true')
     parser.add_argument('--setup-client', help='Setup the current machine as client to a specific package manager server', action='store_true')
     parser.add_argument('--sudo-password', help='Sudo password if current user has such access', action='store_true')
     args = parser.parse_args()
     pswd = None
-    if args.setup_client:
-        parser.error("This feature is currently disabled")
-    if (not args.download and not args.setup_server) or (args.download and args.setup_server):
-        parser.error("Use either --download or --setup-server but not both")
-
+    if (not args.download and not args.setup_server and not args.setup_client) or (args.download and args.setup_server and args.setup_client) or (args.download and args.setup_server) or (args.setup_server and args.setup_client) or (args.download and args.setup_client): 
+        parser.error("Use one: [--download], [--setup-server], or [--setup-client]")
     if args.download and (args.name is None or args.path is None):
         parser.error("--download requires --name and --path.")
-    if args.setup_server and (args.path is None):
+    elif args.setup_server and (args.path is None):
         parser.error("--setup-server requires --path.")
+    elif args.setup_client and (args.ip is None):
+        parser.error("--setup-server requires --ip.")
     if args.sudo_password:
         pswd = getpass.getpass('Sudo Password:')
     offline_package_util = OfflinePkgUtility(sudo_password=pswd)
@@ -111,3 +124,5 @@ if __name__ == "__main__":
         offline_package_util.download_repos(name=args.name, path=args.path)
     elif args.setup_server:
         offline_package_util.setup_pm_server(path=args.path)
+    elif args.setup_client:
+        offline_package_util.setup_client(ip=args.ip)
